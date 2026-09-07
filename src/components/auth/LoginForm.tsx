@@ -49,14 +49,16 @@ export function LoginForm() {
       {notice ? (
         <p className="rounded-xl bg-cream-dark px-3 py-2 text-sm text-ink-soft">{notice}</p>
       ) : null}
-      <Button type="submit">Entrar</Button>
+      <Button type="submit" className="w-full">
+        Entrar
+      </Button>
       <div className="flex flex-col gap-2 text-center text-sm">
-        <Link className="text-rose hover:underline" href="/recuperar-senha">
+        <Link className="text-wine hover:underline" href="/recuperar-senha">
           Esqueci a senha
         </Link>
         <p className="text-ink-soft">
           Primeiro acesso?{" "}
-          <Link className="font-medium text-rose hover:underline" href="/cadastro">
+          <Link className="font-medium text-wine hover:underline" href="/cadastro">
             Cadastrar salão
           </Link>
         </p>

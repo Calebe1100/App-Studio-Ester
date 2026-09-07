@@ -36,9 +36,11 @@ export function RecoverForm() {
       {notice ? (
         <p className="rounded-xl bg-cream-dark px-3 py-2 text-sm text-ink-soft">{notice}</p>
       ) : null}
-      <Button type="submit">Enviar link</Button>
+      <Button type="submit" className="w-full">
+        Enviar link
+      </Button>
       <p className="text-center text-sm text-ink-soft">
-        <Link className="font-medium text-rose hover:underline" href="/login">
+        <Link className="font-medium text-wine hover:underline" href="/login">
           Voltar ao login
         </Link>
       </p>

@@ -1,18 +1,19 @@
 import type { ReactNode } from "react";
+import { Playfair_Display, Montserrat } from "next/font/google";
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Outfit } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
+import { Providers } from "@/components/providers/Providers";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 import "./globals.css";
 
-const outfit = Outfit({
+const montserrat = Montserrat({
   subsets: ["latin"],
-  variable: "--font-outfit",
+  variable: "--font-montserrat",
 });
 
-const fraunces = Fraunces({
+const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  variable: "--font-playfair",
 });
 
 export const metadata: Metadata = {
@@ -25,16 +26,16 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: APP_NAME,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
   },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#7a3144",
+  themeColor: "#4a1f22",
   width: "device-width",
   initialScale: 1,
 };
@@ -42,9 +43,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body className={`${outfit.variable} ${fraunces.variable} font-sans antialiased`}>
+      <body className={`${montserrat.variable} ${playfair.variable} font-sans antialiased`}>
         <ServiceWorkerRegister />
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

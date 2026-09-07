@@ -2,25 +2,25 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Studio Ester",
-    short_name: "Ester",
-    description: "Agenda e gestão do salão",
-    start_url: "/login",
+    name: "Ana Ester Studio de Beleza",
+    short_name: "Ana Ester",
+    description: "Agenda do studio de beleza",
+    start_url: "/agenda",
     display: "standalone",
-    background_color: "#f6f0e7",
-    theme_color: "#7a3144",
+    background_color: "#4a1f22",
+    theme_color: "#4a1f22",
     lang: "pt-BR",
     icons: [
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/logo.png",
+        sizes: "512x512",
+        type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
+        src: "/logo.png",
+        sizes: "512x512",
+        type: "image/png",
         purpose: "maskable",
       },
     ],

@@ -13,7 +13,7 @@ export default function GerenciamentoPage() {
       <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-soft">
         Serviços e totais por atendimento concluído. Sem pagamento no app. Implementação na Fase 3.
       </p>
-      <div className="mt-6 rounded-2xl border border-line bg-gold/20 p-4 text-sm text-ink md:hidden">
+      <div className="mt-6 rounded-2xl border border-line bg-gold/15 p-4 text-sm text-wine md:hidden">
         Use um computador para gerenciar serviços e relatórios.
       </div>
       <div className="mt-8 grid gap-4 md:grid-cols-2">
