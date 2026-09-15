@@ -11,20 +11,17 @@ export function AuthLayout({
   children: ReactNode;
 }) {
   return (
-    <div className="relative min-h-dvh overflow-hidden">
-      <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-gold/30 blur-3xl" />
-      <div className="pointer-events-none absolute -right-16 bottom-10 h-80 w-80 rounded-full bg-rose/15 blur-3xl" />
-
+    <div className="relative min-h-dvh overflow-hidden bg-wine-deep">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-linear-to-b from-gold/15 to-transparent" />
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
-        <div className="mb-8">
-          <Logo />
+        <div className="mb-6 flex justify-center">
+          <Logo size="lg" />
         </div>
-        <div className="rounded-3xl border border-line bg-paper/90 p-6 shadow-[0_20px_50px_-24px_rgba(43,24,20,0.35)] backdrop-blur">
-          <h1 className="font-display text-3xl text-ink">{title}</h1>
+        <div className="rounded-3xl border border-gold/25 bg-paper p-6 shadow-[0_24px_60px_-20px_rgba(0,0,0,0.55)]">
+          <h1 className="font-display text-3xl text-wine">{title}</h1>
           <p className="mt-2 text-sm leading-relaxed text-ink-soft">{subtitle}</p>
           <div className="mt-6">{children}</div>
         </div>
-        <p className="mt-6 text-center text-xs text-ink-soft">Fase 0 — fundação do app web</p>
       </div>
     </div>
   );

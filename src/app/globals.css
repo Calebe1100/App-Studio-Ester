@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
-  --color-cream: #f6f0e7;
-  --color-cream-dark: #ebe1d2;
-  --color-ink: #2b1814;
-  --color-ink-soft: #5c433c;
-  --color-rose: #7a3144;
-  --color-rose-hover: #632738;
-  --color-gold: #c4a36a;
+  --font-sans: var(--font-montserrat), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-playfair), ui-serif, Georgia, serif;
+  --color-wine: #4a1f22;
+  --color-wine-deep: #351618;
+  --color-wine-hover: #5c282c;
+  --color-gold: #d4af37;
+  --color-gold-bright: #f9e076;
+  --color-gold-deep: #a67c00;
+  --color-cream: #f4ece3;
+  --color-cream-dark: #e7d9c8;
+  --color-ink: #2a1614;
+  --color-ink-soft: #6b534c;
   --color-paper: #fffaf4;
-  --color-line: #e4d5c4;
+  --color-line: #e2d3c4;
   --color-danger: #9b2c2c;
 }
 
@@ -26,5 +29,5 @@ body {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--color-gold) 45%, white);
+  background: color-mix(in srgb, var(--color-gold) 50%, white);
 }

@@ -7,14 +7,20 @@ Documento de refinamento para construção **faseada** de um aplicativo web de a
 
 **Receita no app:** não há pagamento, caixa, maquininha nem formas de pagamento. O valor de cada atendimento é o **preço do serviço** cadastrado no backoffice. Relatórios somam esses valores (atendimentos concluídos).
 
+> **Mudanças desde a versão anterior:**
+> - App é para **um único salão fixo** — não existe tela de cadastro/criação de salão.
+> - Dados de login (usuários/senhas) são **persistidos no banco** (PostgreSQL), gerenciados pela camada de backend.
+> - A API usa **autenticação JWT** (JSON Web Token): login retorna `access_token` e `refresh_token`; rotas protegidas exigem `Authorization: Bearer <token>`.
+> - Backend dedicado (Node.js + Express) com endpoints REST, separado do front.
+
 ---
 
 ## 1. Objetivo
 
 Permitir que o salão:
 
-1. Cadastre a conta do negócio e usuários.
-2. Faça login com papéis distintos.
+1. ~~Cadastre a conta do negócio e usuários.~~ **O salão é fixo e pré-configurado** — não há tela de criação de salão. Usuários são criados pelo dono via backoffice.
+2. Faça login com papéis distintos, com **credenciais persistidas no banco** e sessão gerenciada por **JWT**.
 3. Gerencie a agenda de atendimentos.
 4. No backoffice: cadastre/edite **serviços** (nome, duração, preço) e acompanhe operação e totais **conforme os serviços realizados**.
 
@@ -24,7 +30,10 @@ O MVP deve ser usável no dia a dia da recepção, sem depender de app nativo e 
 
 ## 2. Premissas
 
-- Um salão (tenant) por conta no MVP. Multi-salão fica fora da construção inicial.
+- **Salão único e fixo**: não existe tenant dinâmico; o salão é pré-cadastrado via seed/migration. Não há tela pública de criação de salão.
+- Novos usuários (recepção, profissionais) são criados pelo **dono** dentro do app (backoffice de usuários).
+- **Credenciais (e-mail + hash de senha) são armazenadas no banco** gerenciadas pelo backend próprio. Não há dependência de provedor externo de auth no core.
+- **JWT** é o mecanismo de autenticação da API: `POST /auth/login` retorna `{ access_token, refresh_token, expiresIn }`. O front envia `Authorization: Bearer <access_token>` em cada requisição protegida. Refresh token também é persistido no banco e invalidado no logout.
 - Horário de funcionamento e fuso: America/Sao_Paulo.
 - Duração dos serviços em minutos (ex.: 30, 45, 60).
 - Conflito de horário: um profissional não pode ter dois atendimentos sobrepostos.
@@ -55,11 +64,9 @@ A recepção **não** cadastra nem altera catálogo de serviços. Isso é backof
 
 **Cadastro do negócio (primeiro acesso)**
 
-- Nome do salão, telefone, endereço (opcional na Fase 1).
-- E-mail e senha do dono (primeiro usuário = papel Dono).
-- Confirmação de e-mail (se o provedor de auth permitir no free tier).
+> ~~Criação de salão via tela pública~~. **Removido.** O salão é pré-configurado (seed de banco). Não existe rota `/cadastro` de salão para o usuário final.
 
-**Cadastros na operação (após login, fora do backoffice de serviços)**
+**Cadastros na operação (após login, somente pelo dono)**
 
 - **Profissionais:** nome, serviços que realiza (escolha entre serviços já cadastrados), horário de trabalho (início/fim).
 - **Clientes:** nome, telefone, observações (alergia, preferência).
@@ -71,12 +78,14 @@ Fora desta fase: importação em massa, múltiplas unidades, logo/branding avan�
 
 ### 4.2 Login
 
-- E-mail + senha.
-- Recuperação de senha.
-- Sessão persistente (PWA / navegador).
-- Logout.
-- Bloqueio de rotas por autenticação e por papel.
-- Mensagens claras de erro (credencial inválida, e-mail não confirmado).
+- E-mail + senha (credenciais salvas no banco com hash bcrypt).
+- API endpoint `POST /api/auth/login` → retorna `access_token` (JWT, exp 15 min) + `refresh_token` (exp 7 dias, persistido na tabela `refresh_tokens`).
+- Endpoint `POST /api/auth/refresh` → valida refresh token no banco e emite novo access token.
+- Endpoint `POST /api/auth/logout` → revoga refresh token no banco.
+- Recuperação de senha via e-mail (token temporário, exp 1h, salvo no banco).
+- Sessão persistente no cliente: `access_token` em memória; `refresh_token` em `httpOnly cookie` ou `localStorage` (decisão de implementação, documentar escolha).
+- Bloqueio de rotas por autenticação e por papel (`role` embutido no payload JWT).
+- Mensagens claras de erro (credencial inválida, token expirado, token revogado).
 
 Fora desta fase: login social, SSO, 2FA.
 
@@ -139,17 +148,19 @@ Fora desta fase: pagamento, formas de pagamento, desconto, NF-e, TEF, gaveta, DR
 
 **Critério de pronto:** abrir a URL de staging e ver tela de login/cadastro.
 
-### Fase 1 — Conta, login e cadastro (MVP de acesso)
+### Fase 1 — Login e cadastro (MVP de acesso)
 
-**Objetivo:** o salão existe no sistema e alguém entra com segurança.
+**Objetivo:** usuários entram no sistema com segurança; salão já existe (seed).
 
-- Cadastro do salão + dono.
-- Login, logout, recuperação de senha.
-- Sessão e guards de rota.
-- Cadastro de profissionais, clientes e usuários (CRUD básico).
-- **Ainda sem** CRUD completo de serviços na operação; onboarding pode criar 1 serviço via backoffice mínimo ou seed.
+- ~~Cadastro do salão~~ — **removido**; salão pré-configurado via migration/seed.
+- Seed de banco: registro do salão e usuário dono inicial (e-mail + hash de senha).
+- Login com JWT (`POST /api/auth/login`), refresh (`POST /api/auth/refresh`), logout (`POST /api/auth/logout`).
+- Credenciais e refresh tokens **persistidos no banco**.
+- Recuperação de senha por e-mail.
+- Sessão e guards de rota no front.
+- Cadastro de profissionais, clientes e usuários (CRUD básico, pelo dono).
 
-**Critério de pronto:** dono cria salão, cadastra 2 profissionais, 3 clientes e um usuário de recepção que consegue logar com permissão limitada.
+**Critério de pronto:** dono (seed) faz login, cadastra 2 profissionais, 3 clientes e um usuário de recepção que consegue logar com permissão limitada; logout invalida o refresh token no banco.
 
 ### Fase 2 — Agenda operacional (MVP do salão)
 
@@ -294,11 +305,13 @@ Estas fases começam quando as Fases 0–3 estão aceitas em staging. Publicar *
 
 ### 7.1 Primeiro acesso
 
-1. Dono acessa `/cadastro`.
-2. Informa salão + e-mail + senha.
-3. Sistema cria tenant, usuário dono e sessão.
-4. Onboarding: ir ao backoffice e cadastrar pelo menos 1 serviço (pular permitido, mas a agenda fica vazia de opções).
-5. Redireciona para a agenda.
+> **Não há criação de salão pelo usuário.** O salão e o dono inicial são provisionados via seed de banco na primeira implantação.
+
+1. Dono acessa `/login`.
+2. Informa e-mail + senha (credenciais do seed).
+3. Backend valida, gera `access_token` JWT e `refresh_token`; persiste refresh token no banco.
+4. Front armazena tokens; redireciona para a agenda.
+5. Onboarding: ir ao backoffice e cadastrar pelo menos 1 serviço (pular permitido, mas a agenda fica vazia de opções).
 
 ### 7.2 Dia de operação
 
@@ -325,10 +338,21 @@ Estas fases começam quando as Fases 0–3 estão aceitas em staging. Publicar *
 |---|---|---|
 | Frontend | **Next.js** (App Router) ou **Vite + React** | Um código, PWA, deploy grátis |
 | Estilo | Tailwind CSS + componentes próprios | Rápido, barato de manter |
-| Auth + banco | **Supabase** (Postgres, Auth, Storage) | Free tier, RLS por tenant |
+| **Backend API** | **Node.js + Express** (TypeScript) | REST, JWT, middleware de auth |
+| **Auth** | **JWT próprio** (jsonwebtoken + bcrypt) | Sem dependência de provedor externo; credenciais no banco |
+| Banco | **PostgreSQL** (Supabase ou instância própria) | Free tier, dados relacionais |
 | Hospedagem front | **Vercel** ou **Cloudflare Pages** | HTTPS e CI grátis |
+| Hospedagem API | **Railway** ou **Render** (free tier) | Deploy simples de Node |
 | PWA | `vite-plugin-pwa` ou equivalente Next | Instalação no celular |
 | Relatórios | Consultas SQL + CSV no browser | Sem BI pago |
+
+**Autenticação JWT — fluxo resumido:**
+```
+POST /api/auth/login    → { access_token (15min), refresh_token (7d) }
+POST /api/auth/refresh  → { access_token (novo), refresh_token (rotacionado) }
+POST /api/auth/logout   → revoga refresh_token no banco
+GET  /api/*             → requer Authorization: Bearer <access_token>
+```
 
 **Não usar no início:** app nativo separado, VPS 24h, Kubernetes, gateway de pagamento, Stripe/Mercado Pago.
 
@@ -340,9 +364,11 @@ Custos esperados no piloto: **R$ 0** (subdomínio do host) até **~R$ 50–80/an
 
 Entidades:
 
-- `salons` — tenant
-- `profiles` — usuário (auth id, papel, salon_id, professional_id opcional)
-- `professionals`
+- `salons` — salão fixo (único registro; pré-cadastrado via seed)
+- `users` — usuário com credenciais: `id`, `salon_id`, `name`, `email`, `password_hash` (bcrypt), `role` (dono/recepcao/profissional), `active`, `created_at`
+- `refresh_tokens` — `id`, `user_id`, `token_hash`, `expires_at`, `revoked_at`, `created_at`  *(persiste sessões JWT)*
+- `password_reset_tokens` — `id`, `user_id`, `token_hash`, `expires_at`, `used_at`
+- `professionals` — vinculado a um `user_id` quando couber
 - `services` — nome, duração, preço, ativo; gerido só no backoffice
 - `professional_services` — N:N
 - `clients`
@@ -352,8 +378,10 @@ Entidades:
 
 Regras:
 
-- Todo registro leva `salon_id`.
-- RLS: usuário só lê/escreve o próprio salão.
+- Todo registro leva `salon_id` (mesmo sendo único, mantém a coluna para integridade referencial).
+- Autenticação: backend verifica `users.password_hash` com bcrypt; emite JWT com `{ sub: user_id, role, salon_id }`.
+- Refresh token é armazenado como `SHA-256(token)` na coluna `token_hash` (não o valor bruto).
+- Logout/revogação: `refresh_tokens.revoked_at = NOW()`.
 - `appointments.ends_at` = `starts_at` + duração (snapshot).
 - Índice em `(professional_id, starts_at)` para detectar overlap.
 - Totais = `SUM(service_price_snapshot)` onde `status = concluido`.
@@ -364,7 +392,7 @@ Regras:
 
 | Rota | Módulo | Papéis |
 |---|---|---|
-| `/cadastro` | Cadastro do negócio | Público |
+| ~~`/cadastro`~~ | ~~Cadastro do negócio~~ | **Removido** (salão fixo) |
 | `/login` | Login | Público |
 | `/recuperar-senha` | Login | Público |
 | `/agenda` | Agenda | Todos autenticados |
@@ -416,7 +444,7 @@ Desktop: sidebar (Agenda | Cadastros | Gerenciamento). Gerenciamento de serviço
 
 ## 13. Critérios de aceite do MVP de produto (Fases 0–3)
 
-- [ ] Cadastro de salão e login funcionam em staging (HTTPS).
+- [ ] ~~Cadastro de salão~~ Seed de salão e dono executado; login funciona em staging (HTTPS).
 - [ ] Dono cadastra profissionais e clientes na operação.
 - [ ] Dono cadastra e edita serviços **apenas** no backoffice.
 - [ ] Recepção não acessa CRUD de serviços.
@@ -427,6 +455,8 @@ Desktop: sidebar (Agenda | Cadastros | Gerenciamento). Gerenciamento de serviço
 - [ ] Agenda usável em celular; gerenciamento usável em desktop.
 - [ ] PWA instalável no Android (staging).
 - [ ] Dados isolados por salão (sem vazamento entre contas).
+- [ ] Login retorna JWT válido; refresh token persiste no banco; logout revoga o token.
+- [ ] Rotas da API retornam 401 sem token e 403 para papel insuficiente.
 - [ ] Nenhuma tela ou API de pagamento no app.
 
 ---
@@ -446,6 +476,9 @@ Desktop: sidebar (Agenda | Cadastros | Gerenciamento). Gerenciamento de serviço
 
 | Risco | Mitigação |
 |---|---|
+| JWT roubado (XSS) | `access_token` em memória (não em `localStorage`); `httpOnly cookie` para refresh token |
+| Refresh token comprometido | Rotação a cada uso + revogação imediata no logout; expiração de 7 dias |
+| Seed de senha fraca | Validação de complexidade no backend; forçar troca na primeira sessão (futuro) |
 | Internet ruim no salão | PWA com shell cache; agenda do dia em memória; não prometer operação offline total |
 | iPhone sem notificação boa | Status manual + WhatsApp fora do app no início |
 | Dono usa só o celular no backoffice | Lista de serviços usável em tablet; totais compactos; CRUD rico no desktop |
@@ -459,16 +492,54 @@ Desktop: sidebar (Agenda | Cadastros | Gerenciamento). Gerenciamento de serviço
 
 ## 16. Ordem de construção sugerida (checklist técnico)
 
-1. Auth + tabela `salons` / `profiles` + RLS  
-2. CRUD profissionais, clientes, usuários  
-3. CRUD de **serviços no backoffice** + vínculo profissional–serviço  
-4. Agenda (criar/listar/conflito) com preço somente leitura  
-5. Status do atendimento (sem pagamento)  
-6. Totais por snapshot de serviço + permissões por papel  
-7. PWA + polish mobile da agenda  
-8. CSV do relatório de concluídos  
+1. **Backend auth**: tabelas `salons`, `users`, `refresh_tokens`, `password_reset_tokens` + seed do salão fixo e dono inicial.
+   - `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/logout`
+   - Middleware JWT (`verifyToken`) e middleware de papel (`requireRole`)
+   - **Testes de persistência do login** (ver seção 18)
+2. CRUD profissionais, clientes, usuários (rotas protegidas por JWT)
+3. CRUD de **serviços no backoffice** + vínculo profissional–serviço
+4. Agenda (criar/listar/conflito) com preço somente leitura
+5. Status do atendimento (sem pagamento)
+6. Totais por snapshot de serviço + permissões por papel
+7. PWA + polish mobile da agenda
+8. CSV do relatório de concluídos
 
 Cada item acima deve fechar com tela utilizável, não só API.
+
+---
+
+## 18. Testes (backend)
+
+### 18.1 Testes de persistência do login
+
+Cobrem o fluxo completo de auth com banco real (banco de teste / in-memory).
+
+| # | Cenário | Resultado esperado |
+|---|---|---|
+| 1 | `POST /api/auth/login` com credenciais válidas | HTTP 200, `access_token` JWT, `refresh_token` gravado no banco |
+| 2 | `POST /api/auth/login` com senha errada | HTTP 401, sem token gerado |
+| 3 | `POST /api/auth/login` com e-mail inexistente | HTTP 401 |
+| 4 | `POST /api/auth/refresh` com refresh token válido | HTTP 200, novo `access_token`, token antigo revogado (rotação) |
+| 5 | `POST /api/auth/refresh` com token revogado | HTTP 401 |
+| 6 | `POST /api/auth/refresh` com token expirado | HTTP 401 |
+| 7 | `POST /api/auth/logout` | HTTP 204, `revoked_at` preenchido no banco |
+| 8 | Rota protegida sem token | HTTP 401 |
+| 9 | Rota protegida com papel insuficiente | HTTP 403 |
+| 10 | `access_token` expirado (forçar via exp curto) | HTTP 401 na rota protegida |
+
+### 18.2 Testes unitários
+
+| Módulo | O que testar |
+|---|---|
+| `hashPassword` / `comparePassword` | bcrypt: hash gerado é diferente do texto; compare retorna true/false corretamente |
+| `generateAccessToken` | Payload JWT contém `sub`, `role`, `salon_id`; expiração correta |
+| `verifyAccessToken` | Token válido retorna payload; token alterado lança erro; token expirado lança `TokenExpiredError` |
+| `generateRefreshToken` | Retorna string; comprimento mínimo; hash SHA-256 diferente do valor original |
+| Middleware `verifyToken` | Request sem header → 401; token válido → `req.user` preenchido |
+| Middleware `requireRole` | Papel correto → next(); papel errado → 403 |
+| Overlap de agendamentos | Dois slots sem sobreposição → false; slots sobrepostos → true; borda exata → false |
+| Snapshot de serviço | Ao criar agendamento, `service_price_snapshot` = preço atual do serviço |
+| Totais | `SUM(service_price_snapshot)` só conta `status = concluido` |
 
 ---
 
@@ -476,6 +547,7 @@ Cada item acima deve fechar com tela utilizável, não só API.
 
 Validar este refinamento com o salão piloto (status, se o profissional vê a agenda inteira, lista oficial de serviços e preços). Em seguida:
 
-1. Iniciar **Fase 0** no repositório (scaffolding, tema, pipeline de staging).  
-2. Só após aceite das Fases 1–3, executar **P0–P4** de publicação.  
-3. Tratar **P5 (lojas)** como opcional, depois do piloto estável.
+1. Iniciar **Fase 0** no repositório (scaffolding backend Node/Express + front, tema, pipeline de staging).
+2. Executar seed do salão fixo e testes de persistência do login (seção 18).
+3. Só após aceite das Fases 1–3, executar **P0–P4** de publicação.
+4. Tratar **P5 (lojas)** como opcional, depois do piloto estável.
