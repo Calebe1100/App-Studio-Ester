@@ -63,7 +63,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:pb-8">{children}</main>
         <nav className="fixed inset-x-0 bottom-0 grid grid-cols-3 border-t border-line bg-paper md:hidden">
           {nav
-            .filter((item) => ["Agenda", "Clientes", "Gerenciamento"].includes(item.label))
+            .filter((item) => ["Agendar", "Agenda", "Gerenciamento"].includes(item.label))
             .map((item) => {
               const active = isActive(item.href);
               return (
