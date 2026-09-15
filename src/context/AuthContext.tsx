@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         // Renova silenciosamente o access token
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"}/api/auth/refresh`,
+          `${process.env.NEXT_PUBLIC_API_URL ?? "https://studio-ester.vercel.app"}/api/auth/refresh`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

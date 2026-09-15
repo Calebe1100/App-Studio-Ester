@@ -3,7 +3,7 @@
  * Injeta o access token automaticamente e lida com refresh transparente.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "https://studio-ester.vercel.app";
 
 export interface AuthTokens {
   accessToken: string;
