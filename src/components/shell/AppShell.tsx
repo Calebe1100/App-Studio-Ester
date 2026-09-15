@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
+import { useAuth } from "@/context/AuthContext";
 
 const nav = [
   { href: "/agendar", label: "Agendar", hint: "Clientes" },
@@ -15,6 +16,7 @@ const nav = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   function isActive(href: string) {
     if (href === "/gerenciamento") return pathname.startsWith("/gerenciamento");
@@ -54,11 +56,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Logo size="sm" />
           </div>
           <p className="hidden font-display text-sm tracking-wide text-wine md:block">
-            Ana Ester · {pathname.startsWith("/gerenciamento") ? "Backoffice" : pathname === "/agendar" ? "Agendar" : "Agenda"}
+            {user?.name ?? "…"} · {pathname.startsWith("/gerenciamento") ? "Backoffice" : pathname === "/agendar" ? "Agendar" : "Agenda"}
           </p>
-          <Link className="text-sm font-medium text-wine" href="/login">
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className="text-sm font-medium text-wine hover:underline"
+          >
             Sair
-          </Link>
+          </button>
         </header>
         <main className="flex-1 px-4 py-6 pb-24 md:px-8 md:pb-8">{children}</main>
         <nav className="fixed inset-x-0 bottom-0 grid grid-cols-3 border-t border-line bg-paper md:hidden">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { AppShell } from "@/components/shell/AppShell";
 import { DashboardView } from "@/components/backoffice/DashboardView";
+import { ProtectedShell } from "@/components/shell/ProtectedShell";
 
 export const metadata: Metadata = {
   title: "Gerenciamento",
@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function GerenciamentoPage() {
   return (
-    <AppShell>
+    <ProtectedShell roles={["dono"]}>
       <DashboardView />
-    </AppShell>
+    </ProtectedShell>
   );
 }

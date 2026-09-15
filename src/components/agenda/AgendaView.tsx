@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { AppointmentModal } from "@/components/agenda/AppointmentModal";
-import { AppShell } from "@/components/shell/AppShell";
 import { Button } from "@/components/ui/Button";
 import { useSalon } from "@/context/SalonContext";
 import { GRID_START, SLOT_MINUTES } from "@/lib/constants";
@@ -58,7 +57,7 @@ export function AgendaView() {
   }
 
   return (
-    <AppShell>
+    <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-gold-deep">Operação</p>
@@ -213,6 +212,6 @@ export function AgendaView() {
           onClose={() => setOpen(false)}
         />
       ) : null}
-    </AppShell>
+    </>
   );
 }

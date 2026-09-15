@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { AppShell } from "@/components/shell/AppShell";
 import { TotalsView } from "@/components/backoffice/TotalsView";
+import { ProtectedShell } from "@/components/shell/ProtectedShell";
 
 export const metadata: Metadata = {
   title: "Totais",
@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function TotaisPage() {
   return (
-    <AppShell>
+    <ProtectedShell roles={["dono"]}>
       <TotalsView />
-    </AppShell>
+    </ProtectedShell>
   );
 }

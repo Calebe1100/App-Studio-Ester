@@ -15,7 +15,7 @@ export function Logo({
 
   return (
     <Image
-      src="/logo.png"
+      src="/logo_final.png"
       alt={APP_NAME}
       width={512}
       height={512}

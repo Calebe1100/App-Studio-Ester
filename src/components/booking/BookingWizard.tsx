@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AppShell } from "@/components/shell/AppShell";
 import { Button } from "@/components/ui/Button";
 import { Field, TextAreaField } from "@/components/ui/Field";
 import { useSalon } from "@/context/SalonContext";
@@ -118,8 +117,7 @@ export function BookingWizard() {
 
   if (step === "success") {
     return (
-      <AppShell>
-        <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gold/20 text-3xl">
             🌸
           </div>
@@ -155,13 +153,14 @@ export function BookingWizard() {
             Fazer novo agendamento
           </Button>
         </div>
-      </AppShell>
     );
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  void 0; // satisfies TS after early return
+
   return (
-    <AppShell>
-      <div className="mx-auto max-w-xl">
+    <div className="mx-auto max-w-xl">
         <div>
           <p className="text-xs font-medium uppercase tracking-[0.2em] text-gold-deep">Studio de Beleza</p>
           <h1 className="mt-1 font-display text-3xl text-wine md:text-4xl">Agendar horário</h1>
@@ -359,6 +358,5 @@ export function BookingWizard() {
           )}
         </div>
       </div>
-    </AppShell>
   );
 }

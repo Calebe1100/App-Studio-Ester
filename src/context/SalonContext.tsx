@@ -54,8 +54,11 @@ function getSnapshot() {
   return memory;
 }
 
+// Valor estável para o SSR — mesmo objeto entre todas as chamadas (exigido pelo React)
+const SERVER_SNAPSHOT: SalonState = createSeedState();
+
 function getServerSnapshot() {
-  return createSeedState();
+  return SERVER_SNAPSHOT;
 }
 
 function write(updater: (current: SalonState) => SalonState) {
