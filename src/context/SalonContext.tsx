@@ -5,13 +5,16 @@ import { appointmentError } from "@/lib/conflicts";
 import { STORAGE_KEY } from "@/lib/constants";
 import { createSeedState } from "@/lib/seed";
 import { addMinutes } from "@/lib/time";
-import type { Appointment, AppointmentDraft, AppointmentStatus, SalonState } from "@/lib/types";
+import type { Appointment, AppointmentDraft, AppointmentStatus, ClientBookingDraft, SalonState, Service, ServiceDraft } from "@/lib/types";
 
 type SalonContextValue = {
   ready: true;
   state: SalonState;
   saveAppointment: (draft: AppointmentDraft, id?: string) => string | null;
+  bookForClient: (draft: ClientBookingDraft) => string | null;
   setStatus: (id: string, status: AppointmentStatus) => void;
+  saveService: (draft: ServiceDraft, id?: string) => string | null;
+  setServiceActive: (id: string, active: boolean) => void;
 };
 
 const SalonContext = createContext<SalonContextValue | null>(null);
@@ -117,6 +120,54 @@ export function SalonProvider({ children }: { children: ReactNode }) {
     return error;
   }, []);
 
+  const bookForClient = useCallback((draft: ClientBookingDraft) => {
+    let error: string | null = null;
+    write((current) => {
+      const trimmedName = draft.name.trim();
+      const trimmedPhone = draft.phone.trim();
+      if (trimmedName.length < 2) {
+        error = "Informe seu nome completo.";
+        return current;
+      }
+      // Find existing client by phone, or create a new one
+      let client = trimmedPhone
+        ? current.clients.find((c) => c.phone === trimmedPhone)
+        : undefined;
+      let base = current;
+      if (!client) {
+        client = { id: newId("cli"), name: trimmedName, phone: trimmedPhone, notes: "", active: true };
+        base = { ...current, clients: [...current.clients, client] };
+      }
+      const service = base.services.find((s) => s.id === draft.serviceId && s.active);
+      const professional = base.professionals.find((p) => p.id === draft.professionalId && p.active);
+      if (!service) { error = "Serviço não encontrado."; return current; }
+      error = appointmentError({
+        professional,
+        appointments: base.appointments,
+        professionalId: draft.professionalId,
+        date: draft.date,
+        start: draft.start,
+        durationMinutes: service.durationMinutes,
+      });
+      if (error) return current;
+      const payload: Appointment = {
+        id: newId("apt"),
+        clientId: client.id,
+        professionalId: draft.professionalId,
+        serviceId: draft.serviceId,
+        date: draft.date,
+        start: draft.start,
+        end: addMinutes(draft.start, service.durationMinutes),
+        status: "agendado",
+        notes: draft.notes,
+        servicePriceSnapshot: service.price,
+        serviceDurationSnapshot: service.durationMinutes,
+      };
+      return { ...base, appointments: [...base.appointments, payload] };
+    });
+    return error;
+  }, []);
+
   const setStatus = useCallback((id: string, status: AppointmentStatus) => {
     write((current) => ({
       ...current,
@@ -124,9 +175,41 @@ export function SalonProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const saveService = useCallback((draft: ServiceDraft, id?: string) => {
+    const name = draft.name.trim();
+    if (name.length < 2) return "Informe o nome do serviço.";
+    if (draft.durationMinutes < 15) return "A duração mínima é 15 minutos.";
+    if (draft.price < 0) return "O preço não pode ser negativo.";
+
+    write((current) => {
+      const payload: Service = {
+        id: id ?? newId("svc"),
+        name,
+        durationMinutes: draft.durationMinutes,
+        price: draft.price,
+        active: true,
+      };
+      if (id) {
+        return {
+          ...current,
+          services: current.services.map((item) => (item.id === id ? { ...item, ...payload, active: item.active } : item)),
+        };
+      }
+      return { ...current, services: [...current.services, payload] };
+    });
+    return null;
+  }, []);
+
+  const setServiceActive = useCallback((id: string, active: boolean) => {
+    write((current) => ({
+      ...current,
+      services: current.services.map((item) => (item.id === id ? { ...item, active } : item)),
+    }));
+  }, []);
+
   const value = useMemo(
-    () => ({ ready: true as const, state, saveAppointment, setStatus }),
-    [saveAppointment, setStatus, state],
+    () => ({ ready: true as const, state, saveAppointment, bookForClient, setStatus, saveService, setServiceActive }),
+    [bookForClient, saveAppointment, saveService, setServiceActive, setStatus, state],
   );
 
   return <SalonContext.Provider value={value}>{children}</SalonContext.Provider>;

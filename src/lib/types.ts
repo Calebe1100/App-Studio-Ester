@@ -56,6 +56,22 @@ export type AppointmentDraft = {
   notes: string;
 };
 
+export type ServiceDraft = {
+  name: string;
+  durationMinutes: number;
+  price: number;
+};
+
+export type ClientBookingDraft = {
+  name: string;
+  phone: string;
+  professionalId: string;
+  serviceId: string;
+  date: string;
+  start: string;
+  notes: string;
+};
+
 export type SalonState = {
   professionals: Professional[];
   services: Service[];

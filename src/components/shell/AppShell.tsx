@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/Logo";
 
 const nav = [
+  { href: "/agendar", label: "Agendar", hint: "Clientes" },
   { href: "/agenda", label: "Agenda", hint: "Operação" },
   { href: "/clientes", label: "Clientes", hint: "Cadastros" },
   { href: "/profissionais", label: "Profissionais", hint: "Cadastros" },
@@ -15,13 +16,19 @@ const nav = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
+  function isActive(href: string) {
+    if (href === "/gerenciamento") return pathname.startsWith("/gerenciamento");
+    if (href === "/agendar") return pathname === "/agendar";
+    return pathname === href;
+  }
+
   return (
     <div className="min-h-dvh md:grid md:grid-cols-[248px_1fr]">
       <aside className="hidden bg-wine-deep md:flex md:flex-col md:p-5">
         <Logo size="wide" />
         <nav className="mt-8 space-y-1">
           {nav.map((item) => {
-            const active = pathname === item.href;
+            const active = isActive(item.href);
             return (
               <Link
                 key={item.href}
@@ -46,7 +53,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           <div className="md:hidden">
             <Logo size="sm" />
           </div>
-          <p className="hidden font-display text-sm tracking-wide text-wine md:block">Ana Ester · Agenda</p>
+          <p className="hidden font-display text-sm tracking-wide text-wine md:block">
+            Ana Ester · {pathname.startsWith("/gerenciamento") ? "Backoffice" : pathname === "/agendar" ? "Agendar" : "Agenda"}
+          </p>
           <Link className="text-sm font-medium text-wine" href="/login">
             Sair
           </Link>
@@ -56,7 +65,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           {nav
             .filter((item) => ["Agenda", "Clientes", "Gerenciamento"].includes(item.label))
             .map((item) => {
-              const active = pathname === item.href;
+              const active = isActive(item.href);
               return (
                 <Link
                   key={item.href}

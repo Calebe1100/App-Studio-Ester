@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/shell/AppShell";
-import { DashboardView } from "@/components/backoffice/DashboardView";
+import { ServicesView } from "@/components/backoffice/ServicesView";
 
 export const metadata: Metadata = {
-  title: "Gerenciamento",
+  title: "Serviços",
 };
 
-export default function GerenciamentoPage() {
+export default function ServicosPage() {
   return (
     <AppShell>
-      <DashboardView />
+      <ServicesView />
     </AppShell>
   );
 }
