@@ -68,10 +68,12 @@ export function CadastroForm() {
       {notice ? (
         <p className="rounded-xl bg-cream-dark px-3 py-2 text-sm text-ink-soft">{notice}</p>
       ) : null}
-      <Button type="submit">Criar conta</Button>
+      <Button type="submit" className="w-full">
+        Criar conta
+      </Button>
       <p className="text-center text-sm text-ink-soft">
         Já tem conta?{" "}
-        <Link className="font-medium text-rose hover:underline" href="/login">
+        <Link className="font-medium text-wine hover:underline" href="/login">
           Entrar
         </Link>
       </p>
