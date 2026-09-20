@@ -10,7 +10,7 @@ export default function RecoverPage() {
   return (
     <AuthLayout
       title="Recuperar senha"
-      subtitle="Informe o e-mail da conta. O envio do link entra na Fase 1."
+      subtitle="Informe o celular cadastrado. Enviamos um código por WhatsApp (ou SMS) para você criar uma nova senha."
     >
       <RecoverForm />
     </AuthLayout>

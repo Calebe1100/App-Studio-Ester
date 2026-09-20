@@ -82,7 +82,7 @@ Fora desta fase: importação em massa, múltiplas unidades, logo/branding avan�
 - API endpoint `POST /api/auth/login` → retorna `access_token` (JWT, exp 15 min) + `refresh_token` (exp 7 dias, persistido na tabela `refresh_tokens`).
 - Endpoint `POST /api/auth/refresh` → valida refresh token no banco e emite novo access token.
 - Endpoint `POST /api/auth/logout` → revoga refresh token no banco.
-- Recuperação de senha via e-mail (token temporário, exp 1h, salvo no banco).
+- Recuperação de senha por código de 6 dígitos enviado ao celular por WhatsApp (fallback SMS): `POST /api/auth/forgot-password` (código válido por 10 min, só o hash é salvo em `password_reset_codes`) → `POST /api/auth/verify-reset-code` (devolve token de uso único, exp 15 min) → `POST /api/auth/reset-password`.
 - Sessão persistente no cliente: `access_token` em memória; `refresh_token` em `httpOnly cookie` ou `localStorage` (decisão de implementação, documentar escolha).
 - Bloqueio de rotas por autenticação e por papel (`role` embutido no payload JWT).
 - Mensagens claras de erro (credencial inválida, token expirado, token revogado).
@@ -129,7 +129,16 @@ Uso principal em **desktop**. Aviso em tela estreita: “use um computador para 
 - Quebra por profissional e por serviço.
 - Exportar CSV (desejável no MVP se simples).
 
-Fora desta fase: pagamento, formas de pagamento, desconto, NF-e, TEF, gaveta, DRE, contas a pagar, estoque, metas, comissões detalhadas.
+**Despesas e balanço do mês**
+
+- Lançamento de despesas pelo dono em `/gerenciamento/despesas`, com descrição, categoria, valor e observações.
+- Dois tipos: **fixa** (repete todo mês no dia de vencimento, com vigência de início e fim opcional) e **isolada** (vale só na data informada).
+- Despesa fixa com vencimento no dia 29–31 cai no último dia dos meses mais curtos.
+- Desativar em vez de apagar: despesa inativa fica no histórico e sai do balanço.
+- Balanço do período em `/gerenciamento/totais`: receita (concluídos) − despesas = resultado, com margem, quebra por categoria e CSV.
+- Fechamento do mês = balanço com o período “mês”; o painel mostra o resultado do mês corrente.
+
+Fora desta fase: pagamento, formas de pagamento, desconto, NF-e, TEF, gaveta, DRE, estoque, metas, comissões detalhadas, baixa de contas a pagar (a despesa é previsão/registro, não há status de pago).
 
 ---
 
@@ -156,7 +165,7 @@ Fora desta fase: pagamento, formas de pagamento, desconto, NF-e, TEF, gaveta, DR
 - Seed de banco: registro do salão e usuário dono inicial (e-mail + hash de senha).
 - Login com JWT (`POST /api/auth/login`), refresh (`POST /api/auth/refresh`), logout (`POST /api/auth/logout`).
 - Credenciais e refresh tokens **persistidos no banco**.
-- Recuperação de senha por e-mail.
+- Recuperação de senha por código no celular (WhatsApp, com fallback SMS).
 - Sessão e guards de rota no front.
 - Cadastro de profissionais, clientes e usuários (CRUD básico, pelo dono).
 
@@ -225,7 +234,7 @@ Estas fases começam quando as Fases 0–3 estão aceitas em staging. Publicar *
 - Deploy de produção a partir de `main`.
 - URL temporária (`*.vercel.app` / `*.pages.dev`) para o piloto interno.
 - HTTPS obrigatório (já incluso no host).
-- Confirmar e-mails (recuperação de senha, confirmação) com remetente do ambiente de produção.
+- Confirmar envio do código de recuperação de senha (WhatsApp/SMS) com as credenciais do ambiente de produção.
 - Criar a conta real do salão piloto (não dados de teste).
 
 **Critério de pronto:** dono e recepção entram pela URL de produção e operam um dia real (ou ensaio assistido).
@@ -373,6 +382,7 @@ Entidades:
 - `professional_services` — N:N
 - `clients`
 - `appointments` — salon, client, professional, service, início, fim, status, **`service_price_snapshot`**, **`service_duration_snapshot`**
+- `expenses` — salon, descrição, categoria, `kind` (`fixa`/`isolada`), valor, `due_date` (isolada), `day_of_month` + `starts_on`/`ends_on` (fixa), ativo
 
 **Não existe** tabela `payments`.
 
@@ -385,6 +395,8 @@ Regras:
 - `appointments.ends_at` = `starts_at` + duração (snapshot).
 - Índice em `(professional_id, starts_at)` para detectar overlap.
 - Totais = `SUM(service_price_snapshot)` onde `status = concluido`.
+- Despesa fixa não gera uma linha por mês no banco: a recorrência é expandida no período consultado (dia limitado ao último dia do mês).
+- Balanço do período = totais dos concluídos − despesas ativas materializadas no período.
 
 ---
 
@@ -401,7 +413,8 @@ Regras:
 | `/usuarios` | Cadastro / gestão | Dono |
 | `/gerenciamento` | Hub backoffice | Dono (e visão limitada se houver) |
 | `/gerenciamento/servicos` | CRUD de serviços | **Somente dono** |
-| `/gerenciamento/totais` | Totais por serviço/período | Dono |
+| `/gerenciamento/despesas` | Despesas fixas e isoladas | **Somente dono** |
+| `/gerenciamento/totais` | Totais por serviço/período + balanço | Dono |
 
 **Não existem** rotas de caixa, checkout ou formas de pagamento.
 

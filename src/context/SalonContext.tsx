@@ -5,7 +5,7 @@ import { appointmentError } from "@/lib/conflicts";
 import { STORAGE_KEY } from "@/lib/constants";
 import { createSeedState } from "@/lib/seed";
 import { addMinutes } from "@/lib/time";
-import type { Appointment, AppointmentDraft, AppointmentStatus, ClientBookingDraft, SalonState, Service, ServiceDraft } from "@/lib/types";
+import type { Appointment, AppointmentDraft, AppointmentStatus, ClientBookingDraft, Expense, ExpenseDraft, SalonState, Service, ServiceDraft } from "@/lib/types";
 
 type SalonContextValue = {
   ready: true;
@@ -15,9 +15,13 @@ type SalonContextValue = {
   setStatus: (id: string, status: AppointmentStatus) => void;
   saveService: (draft: ServiceDraft, id?: string) => string | null;
   setServiceActive: (id: string, active: boolean) => void;
+  saveExpense: (draft: ExpenseDraft, id?: string) => string | null;
+  setExpenseActive: (id: string, active: boolean) => void;
 };
 
 const SalonContext = createContext<SalonContextValue | null>(null);
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function newId(prefix: string) {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
@@ -35,7 +39,9 @@ function readStorage() {
   const raw = window.localStorage.getItem(STORAGE_KEY);
   if (!raw) return createSeedState();
   try {
-    return JSON.parse(raw) as SalonState;
+    const stored = JSON.parse(raw) as Partial<SalonState>;
+    // Estados salvos antes das despesas não têm a coleção — evita quebrar o balanço.
+    return { ...createSeedState(), ...stored, expenses: stored.expenses ?? [] };
   } catch {
     return createSeedState();
   }
@@ -210,9 +216,81 @@ export function SalonProvider({ children }: { children: ReactNode }) {
     }));
   }, []);
 
+  const saveExpense = useCallback((draft: ExpenseDraft, id?: string) => {
+    const description = draft.description.trim();
+    if (description.length < 2) return "Informe a descrição da despesa.";
+    if (!Number.isFinite(draft.amount) || draft.amount <= 0) return "Informe um valor maior que zero.";
+
+    const isFixed = draft.kind === "fixa";
+    if (isFixed) {
+      if (!Number.isInteger(draft.dayOfMonth) || draft.dayOfMonth < 1 || draft.dayOfMonth > 31) {
+        return "Informe o dia do vencimento entre 1 e 31.";
+      }
+      if (!ISO_DATE.test(draft.startsOn)) return "Informe o início da vigência.";
+      if (draft.endsOn && !ISO_DATE.test(draft.endsOn)) return "Fim da vigência inválido.";
+      if (draft.endsOn && draft.endsOn < draft.startsOn) {
+        return "O fim da vigência não pode ser antes do início.";
+      }
+    } else if (!ISO_DATE.test(draft.dueDate)) {
+      return "Informe a data da despesa.";
+    }
+
+    write((current) => {
+      const payload: Expense = {
+        id: id ?? newId("exp"),
+        description,
+        category: draft.category,
+        kind: draft.kind,
+        amount: draft.amount,
+        dueDate: isFixed ? null : draft.dueDate,
+        dayOfMonth: isFixed ? draft.dayOfMonth : null,
+        startsOn: isFixed ? draft.startsOn : null,
+        endsOn: isFixed && draft.endsOn ? draft.endsOn : null,
+        notes: draft.notes.trim(),
+        active: true,
+      };
+      if (id) {
+        return {
+          ...current,
+          expenses: current.expenses.map((item) =>
+            item.id === id ? { ...payload, active: item.active } : item,
+          ),
+        };
+      }
+      return { ...current, expenses: [...current.expenses, payload] };
+    });
+    return null;
+  }, []);
+
+  const setExpenseActive = useCallback((id: string, active: boolean) => {
+    write((current) => ({
+      ...current,
+      expenses: current.expenses.map((item) => (item.id === id ? { ...item, active } : item)),
+    }));
+  }, []);
+
   const value = useMemo(
-    () => ({ ready: true as const, state, saveAppointment, bookForClient, setStatus, saveService, setServiceActive }),
-    [bookForClient, saveAppointment, saveService, setServiceActive, setStatus, state],
+    () => ({
+      ready: true as const,
+      state,
+      saveAppointment,
+      bookForClient,
+      setStatus,
+      saveService,
+      setServiceActive,
+      saveExpense,
+      setExpenseActive,
+    }),
+    [
+      bookForClient,
+      saveAppointment,
+      saveExpense,
+      saveService,
+      setExpenseActive,
+      setServiceActive,
+      setStatus,
+      state,
+    ],
   );
 
   return <SalonContext.Provider value={value}>{children}</SalonContext.Provider>;
