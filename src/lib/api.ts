@@ -142,10 +142,34 @@ export async function apiLogout(): Promise<void> {
   clearSession();
 }
 
-export async function apiForgotPassword(email: string): Promise<void> {
-  await apiFetch("/api/auth/forgot-password", {
+/** Dispara o envio do código de recuperação para o celular (WhatsApp/SMS). */
+export async function apiForgotPassword(phone: string): Promise<{ expiresInMinutes: number }> {
+  return apiFetch<{ message: string; expiresInMinutes: number }>(
+    "/api/auth/forgot-password",
+    {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+      skipAuth: true,
+    },
+  );
+}
+
+/** Troca o código recebido no celular por um token de redefinição. */
+export async function apiVerifyResetCode(
+  phone: string,
+  code: string,
+): Promise<{ resetToken: string; expiresIn: number }> {
+  return apiFetch("/api/auth/verify-reset-code", {
     method: "POST",
-    body: JSON.stringify({ email }),
+    body: JSON.stringify({ phone, code }),
+    skipAuth: true,
+  });
+}
+
+export async function apiResetPassword(token: string, password: string): Promise<void> {
+  await apiFetch("/api/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
     skipAuth: true,
   });
 }

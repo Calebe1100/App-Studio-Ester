@@ -62,6 +62,60 @@ export type ServiceDraft = {
   price: number;
 };
 
+export const EXPENSE_CATEGORIES = [
+  "aluguel",
+  "pessoal",
+  "produtos",
+  "utilidades",
+  "impostos",
+  "marketing",
+  "manutencao",
+  "outros",
+] as const;
+
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+
+/** `fixa` = recorrente todo mês; `isolada` = lançamento único. */
+export type ExpenseKind = "fixa" | "isolada";
+
+export type Expense = {
+  id: string;
+  description: string;
+  category: ExpenseCategory;
+  kind: ExpenseKind;
+  amount: number;
+  /** Isolada: data do lançamento. */
+  dueDate: string | null;
+  /** Fixa: dia do vencimento e vigência (`endsOn` nulo = sem fim). */
+  dayOfMonth: number | null;
+  startsOn: string | null;
+  endsOn: string | null;
+  notes: string;
+  active: boolean;
+};
+
+/** Uma despesa materializada em uma data — fixas geram uma por mês de vigência. */
+export type ExpenseOccurrence = {
+  expenseId: string;
+  description: string;
+  category: ExpenseCategory;
+  kind: ExpenseKind;
+  amount: number;
+  date: string;
+};
+
+export type ExpenseDraft = {
+  description: string;
+  category: ExpenseCategory;
+  kind: ExpenseKind;
+  amount: number;
+  dueDate: string;
+  dayOfMonth: number;
+  startsOn: string;
+  endsOn: string;
+  notes: string;
+};
+
 export type ClientBookingDraft = {
   name: string;
   phone: string;
@@ -77,4 +131,5 @@ export type SalonState = {
   services: Service[];
   clients: Client[];
   appointments: Appointment[];
+  expenses: Expense[];
 };

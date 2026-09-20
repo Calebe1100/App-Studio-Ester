@@ -7,7 +7,8 @@ import { usePathname } from "next/navigation";
 const tabs = [
   { href: "/gerenciamento", label: "Painel", exact: true },
   { href: "/gerenciamento/servicos", label: "Serviços", exact: false },
-  { href: "/gerenciamento/totais", label: "Totais", exact: false },
+  { href: "/gerenciamento/despesas", label: "Despesas", exact: false },
+  { href: "/gerenciamento/totais", label: "Totais e balanço", exact: false },
 ];
 
 export function BackofficeFrame({

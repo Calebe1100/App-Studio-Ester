@@ -3,6 +3,7 @@ import type { SalonState } from "@/lib/types";
 
 export function createSeedState(): SalonState {
   const date = todayISO();
+  const monthStart = `${date.slice(0, 8)}01`;
   return {
     professionals: [
       { id: "pro-1", name: "Camila Souza", workStart: "09:00", workEnd: "18:00", active: true },
@@ -71,6 +72,47 @@ export function createSeedState(): SalonState {
         notes: "",
         servicePriceSnapshot: 120,
         serviceDurationSnapshot: 60,
+      },
+    ],
+    expenses: [
+      {
+        id: "exp-1",
+        description: "Aluguel do salão",
+        category: "aluguel",
+        kind: "fixa",
+        amount: 2500,
+        dueDate: null,
+        dayOfMonth: 5,
+        startsOn: monthStart,
+        endsOn: null,
+        notes: "",
+        active: true,
+      },
+      {
+        id: "exp-2",
+        description: "Água, luz e internet",
+        category: "utilidades",
+        kind: "fixa",
+        amount: 620,
+        dueDate: null,
+        dayOfMonth: 10,
+        startsOn: monthStart,
+        endsOn: null,
+        notes: "",
+        active: true,
+      },
+      {
+        id: "exp-3",
+        description: "Compra de tinturas",
+        category: "produtos",
+        kind: "isolada",
+        amount: 340.5,
+        dueDate: date,
+        dayOfMonth: null,
+        startsOn: null,
+        endsOn: null,
+        notes: "",
+        active: true,
       },
     ],
   };
